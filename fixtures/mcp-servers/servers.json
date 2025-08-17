@@ -1,0 +1,71 @@
+[
+  {
+    "id": "mcp-servers-gmail",
+    "title": "MCP Servers Gmail",
+    "description": "Community list",
+    "runtime": "python",
+    "install": "uvx community-gmail",
+    "sourceUrl": "https://github.com/acme/community-gmail",
+    "tags": [
+      "gmail"
+    ]
+  },
+  {
+    "id": "mcp-servers-drive",
+    "title": "MCP Servers Drive",
+    "description": "Community list for Drive",
+    "runtime": "python",
+    "install": "uvx community-drive",
+    "sourceUrl": "https://github.com/acme/community-drive",
+    "tags": [
+      "google-drive",
+      "drive"
+    ]
+  },
+  {
+    "id": "mcp-servers-sheets",
+    "title": "MCP Servers Sheets",
+    "description": "Community list for Sheets",
+    "runtime": "python",
+    "install": "uvx community-sheets",
+    "sourceUrl": "https://github.com/acme/community-sheets",
+    "tags": [
+      "google-sheets",
+      "sheets"
+    ]
+  },
+  {
+    "id": "mcp-servers-calendar",
+    "title": "MCP Servers Calendar",
+    "description": "Community list for Calendar",
+    "runtime": "python",
+    "install": "uvx community-calendar",
+    "sourceUrl": "https://github.com/acme/community-calendar",
+    "tags": [
+      "google-calendar",
+      "calendar"
+    ]
+  },
+  {
+    "id": "mcp-servers-slack",
+    "title": "MCP Servers Slack",
+    "description": "Community list for Slack",
+    "runtime": "python",
+    "install": "uvx community-slack",
+    "sourceUrl": "https://github.com/acme/community-slack",
+    "tags": [
+      "slack"
+    ]
+  },
+  {
+    "id": "mcp-servers-github",
+    "title": "MCP Servers GitHub",
+    "description": "Community list for GitHub",
+    "runtime": "python",
+    "install": "uvx community-github",
+    "sourceUrl": "https://github.com/acme/community-github",
+    "tags": [
+      "github"
+    ]
+  }
+]

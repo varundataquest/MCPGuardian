@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: mcp-harvest
+    env: python
+    buildCommand: pip install poetry && poetry install
+    startCommand: poetry run mcp-harvest devserver --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11 

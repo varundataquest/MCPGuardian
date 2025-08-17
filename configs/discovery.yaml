@@ -1,0 +1,24 @@
+sources:
+  github:   { enabled: true,  per_minute: 25 }
+  npm:      { enabled: true,  per_minute: 12 }
+  pypi:     { enabled: true,  per_minute: 20 }
+  docker:   { enabled: true,  per_minute: 10 }
+  registries: { enabled: true }
+  websearch:  { enabled: true, engine: "bing" }
+apis:
+  github_token_env: GITHUB_TOKEN
+  bing_key_env:     BING_API_KEY
+  serpapi_key_env:  SERPAPI_API_KEY
+crawl:
+  user_agent: "MCPHarvester/1.0 (+https://example.com)"
+  timeout_sec: 20
+  retries: 3
+  cache_db: ".cache/http_cache.sqlite"
+synonyms:
+  gmail:   ["gmail","email","smtp","google mail","gmail api"]
+  drive:   ["google drive","gdrive","files","storage"]
+  slack:   ["slack","chat","messaging","webhook"]
+  jira:    ["jira","issue tracking","atlassian"]
+  notion:  ["notion","docs","notes","workspace"]
+  postgres: ["postgres","postgresql","database","sql"]
+  calendar: ["calendar","google calendar","events","scheduling"]

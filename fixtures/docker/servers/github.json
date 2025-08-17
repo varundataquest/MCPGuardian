@@ -1,0 +1,14 @@
+{
+  "id": "docker-github",
+  "title": "Docker GitHub",
+  "description": "Dockerized GitHub server",
+  "image": "acme/github:latest",
+  "curated": true,
+  "sourceRepo": "https://github.com/acme/github-docker",
+  "transports": [
+    "stdio"
+  ],
+  "tags": [
+    "github"
+  ]
+}

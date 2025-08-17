@@ -1,0 +1,29 @@
+{
+  "auth_required": "none",
+  "description": "Dockerized Gmail server",
+  "display_name": "Docker Gmail",
+  "env_vars": [],
+  "fingerprint_sha256": null,
+  "first_seen_iso": null,
+  "homepage": null,
+  "install": "docker run acme/gmail:latest",
+  "last_seen_iso": null,
+  "license": null,
+  "maintainer": null,
+  "notes": "curated",
+  "registries_seen_in": [
+    "docker"
+  ],
+  "registry": "docker",
+  "reputation_score": null,
+  "runtime": "docker-image",
+  "server_id": "docker-gmail",
+  "source_repo": "https://github.com/acme/gmail-docker",
+  "tags": [
+    "gmail"
+  ],
+  "tools": [],
+  "transports": [
+    "stdio"
+  ]
+}

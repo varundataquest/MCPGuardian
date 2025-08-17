@@ -1,0 +1,15 @@
+{
+  "id": "docker-calendar",
+  "title": "Docker Calendar",
+  "description": "Dockerized Google Calendar server",
+  "image": "acme/calendar:latest",
+  "curated": false,
+  "sourceRepo": "https://github.com/acme/calendar-docker",
+  "transports": [
+    "stdio"
+  ],
+  "tags": [
+    "google-calendar",
+    "calendar"
+  ]
+}

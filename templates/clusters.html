@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Clusters</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Clusters</h1>
+    <nav>
+      <a href="/">Search</a>
+      <a href="/clusters/page">Clusters</a>
+    </nav>
+  </header>
+  <main>
+    <section>
+      <h2>Top terms per cluster (k={{ k }})</h2>
+      <ul>
+        {% for c in clusters %}
+        <li>
+          <strong>#{{ c.cluster }}</strong> ({{ c.size }} items): {{ ", ".join(c.terms) }}
+        </li>
+        {% endfor %}
+      </ul>
+      <img alt="Cluster sizes" src="/clusters/plot?k={{ k }}" />
+    </section>
+  </main>
+</body>
+</html>

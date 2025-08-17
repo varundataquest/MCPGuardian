@@ -1,0 +1,1 @@
+{"name":"gmail-python","title":"Gmail Python","description":"Python Gmail server","runtime":"python","install":"uvx mcp-gmail","sourceUrl":"https://github.com/acme/gmail","tags":["gmail","email"],"env":[{"name":"GMAIL_TOKEN","required":true}],"tools":[{"name":"send_email"}]}

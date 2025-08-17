@@ -1,0 +1,27 @@
+{
+  "auth_required": "none",
+  "description": "",
+  "display_name": "chrome history mcp",
+  "env_vars": [],
+  "fingerprint_sha256": null,
+  "first_seen_iso": null,
+  "homepage": "https://github.com/vincent-pli/chrome-history-mcp",
+  "install": "",
+  "last_seen_iso": null,
+  "license": null,
+  "maintainer": null,
+  "notes": null,
+  "registries_seen_in": [
+    "mcp-servers"
+  ],
+  "registry": "mcp-servers",
+  "reputation_score": null,
+  "runtime": "unknown",
+  "server_id": "mcp-servers:vincent-pli-chrome-history-mcp",
+  "source_repo": "https://github.com/vincent-pli/chrome-history-mcp",
+  "tags": [],
+  "tools": [],
+  "transports": [
+    "stdio"
+  ]
+}

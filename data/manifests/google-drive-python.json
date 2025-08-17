@@ -1,0 +1,45 @@
+{
+  "auth_required": "api_key",
+  "description": "Python Google Drive server",
+  "display_name": "Google Drive Python",
+  "env_vars": [
+    {
+      "description": null,
+      "name": "GOOGLE_TOKEN",
+      "required": true
+    }
+  ],
+  "fingerprint_sha256": null,
+  "first_seen_iso": null,
+  "homepage": null,
+  "install": "uvx mcp-drive",
+  "last_seen_iso": null,
+  "license": null,
+  "maintainer": null,
+  "notes": null,
+  "registries_seen_in": [
+    "mcp-get"
+  ],
+  "registry": "mcp-get",
+  "reputation_score": null,
+  "runtime": "python",
+  "server_id": "google-drive-python",
+  "source_repo": "https://github.com/acme/drive",
+  "tags": [
+    "google-drive",
+    "drive"
+  ],
+  "tools": [
+    {
+      "description": null,
+      "name": "list_files"
+    },
+    {
+      "description": null,
+      "name": "upload_file"
+    }
+  ],
+  "transports": [
+    "stdio"
+  ]
+}

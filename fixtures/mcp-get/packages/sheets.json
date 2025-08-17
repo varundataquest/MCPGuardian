@@ -1,0 +1,26 @@
+{
+  "name": "google-sheets-python",
+  "title": "Google Sheets Python",
+  "description": "Python Google Sheets server",
+  "runtime": "python",
+  "install": "uvx mcp-sheets",
+  "sourceUrl": "https://github.com/acme/sheets",
+  "tags": [
+    "google-sheets",
+    "sheets"
+  ],
+  "env": [
+    {
+      "name": "GOOGLE_TOKEN",
+      "required": true
+    }
+  ],
+  "tools": [
+    {
+      "name": "read_sheet"
+    },
+    {
+      "name": "write_sheet"
+    }
+  ]
+}

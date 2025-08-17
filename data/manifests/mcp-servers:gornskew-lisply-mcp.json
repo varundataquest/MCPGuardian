@@ -1,0 +1,27 @@
+{
+  "auth_required": "none",
+  "description": "",
+  "display_name": "lisply mcp",
+  "env_vars": [],
+  "fingerprint_sha256": null,
+  "first_seen_iso": null,
+  "homepage": "https://github.com/gornskew/lisply-mcp",
+  "install": "",
+  "last_seen_iso": null,
+  "license": null,
+  "maintainer": null,
+  "notes": null,
+  "registries_seen_in": [
+    "mcp-servers"
+  ],
+  "registry": "mcp-servers",
+  "reputation_score": null,
+  "runtime": "unknown",
+  "server_id": "mcp-servers:gornskew-lisply-mcp",
+  "source_repo": "https://github.com/gornskew/lisply-mcp",
+  "tags": [],
+  "tools": [],
+  "transports": [
+    "stdio"
+  ]
+}

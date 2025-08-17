@@ -1,0 +1,1 @@
+{"id":"docker-gmail","title":"Docker Gmail","description":"Dockerized Gmail server","image":"acme/gmail:latest","curated":true,"sourceRepo":"https://github.com/acme/gmail-docker","transports":["stdio"],"tags":["gmail"]}

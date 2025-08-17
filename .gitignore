@@ -1,0 +1,10 @@
+.env
+.cache/
+models/
+__pycache__/
+*.pyc
+.poetry/
+*.sqlite
+*.log
+.venv/
+.DS_Store

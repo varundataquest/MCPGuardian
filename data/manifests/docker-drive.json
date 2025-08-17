@@ -1,0 +1,30 @@
+{
+  "auth_required": "none",
+  "description": "Dockerized Google Drive server",
+  "display_name": "Docker Drive",
+  "env_vars": [],
+  "fingerprint_sha256": null,
+  "first_seen_iso": null,
+  "homepage": null,
+  "install": "docker run acme/drive:latest",
+  "last_seen_iso": null,
+  "license": null,
+  "maintainer": null,
+  "notes": "curated",
+  "registries_seen_in": [
+    "docker"
+  ],
+  "registry": "docker",
+  "reputation_score": null,
+  "runtime": "docker-image",
+  "server_id": "docker-drive",
+  "source_repo": "https://github.com/acme/drive-docker",
+  "tags": [
+    "google-drive",
+    "drive"
+  ],
+  "tools": [],
+  "transports": [
+    "stdio"
+  ]
+}

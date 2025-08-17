@@ -1,0 +1,45 @@
+{
+  "auth_required": "api_key",
+  "description": "Python Google Calendar server",
+  "display_name": "Google Calendar Python",
+  "env_vars": [
+    {
+      "description": null,
+      "name": "GOOGLE_TOKEN",
+      "required": true
+    }
+  ],
+  "fingerprint_sha256": null,
+  "first_seen_iso": null,
+  "homepage": null,
+  "install": "uvx mcp-calendar",
+  "last_seen_iso": null,
+  "license": null,
+  "maintainer": null,
+  "notes": null,
+  "registries_seen_in": [
+    "mcp-get"
+  ],
+  "registry": "mcp-get",
+  "reputation_score": null,
+  "runtime": "python",
+  "server_id": "google-calendar-python",
+  "source_repo": "https://github.com/acme/calendar",
+  "tags": [
+    "google-calendar",
+    "calendar"
+  ],
+  "tools": [
+    {
+      "description": null,
+      "name": "list_events"
+    },
+    {
+      "description": null,
+      "name": "create_event"
+    }
+  ],
+  "transports": [
+    "stdio"
+  ]
+}

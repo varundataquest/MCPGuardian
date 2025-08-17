@@ -1,0 +1,26 @@
+{
+  "name": "google-drive-python",
+  "title": "Google Drive Python",
+  "description": "Python Google Drive server",
+  "runtime": "python",
+  "install": "uvx mcp-drive",
+  "sourceUrl": "https://github.com/acme/drive",
+  "tags": [
+    "google-drive",
+    "drive"
+  ],
+  "env": [
+    {
+      "name": "GOOGLE_TOKEN",
+      "required": true
+    }
+  ],
+  "tools": [
+    {
+      "name": "list_files"
+    },
+    {
+      "name": "upload_file"
+    }
+  ]
+}

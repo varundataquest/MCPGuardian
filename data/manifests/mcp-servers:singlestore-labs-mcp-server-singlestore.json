@@ -1,0 +1,27 @@
+{
+  "auth_required": "none",
+  "description": "",
+  "display_name": "mcp server singlestore",
+  "env_vars": [],
+  "fingerprint_sha256": null,
+  "first_seen_iso": null,
+  "homepage": "https://github.com/singlestore-labs/mcp-server-singlestore",
+  "install": "",
+  "last_seen_iso": null,
+  "license": null,
+  "maintainer": null,
+  "notes": null,
+  "registries_seen_in": [
+    "mcp-servers"
+  ],
+  "registry": "mcp-servers",
+  "reputation_score": null,
+  "runtime": "unknown",
+  "server_id": "mcp-servers:singlestore-labs-mcp-server-singlestore",
+  "source_repo": "https://github.com/singlestore-labs/mcp-server-singlestore",
+  "tags": [],
+  "tools": [],
+  "transports": [
+    "stdio"
+  ]
+}

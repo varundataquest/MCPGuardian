@@ -1,0 +1,41 @@
+{
+  "auth_required": "api_key",
+  "description": "Sheets server in Smithery",
+  "display_name": "Smithery Sheets",
+  "env_vars": [
+    {
+      "description": null,
+      "name": "TOKEN",
+      "required": true
+    }
+  ],
+  "fingerprint_sha256": null,
+  "first_seen_iso": null,
+  "homepage": null,
+  "install": "uvx smithery-sheets",
+  "last_seen_iso": null,
+  "license": null,
+  "maintainer": null,
+  "notes": null,
+  "registries_seen_in": [
+    "smithery"
+  ],
+  "registry": "smithery",
+  "reputation_score": null,
+  "runtime": "python",
+  "server_id": "smithery-sheets",
+  "source_repo": "https://github.com/acme/smithery-sheets",
+  "tags": [
+    "google-sheets",
+    "sheets"
+  ],
+  "tools": [
+    {
+      "description": null,
+      "name": "tool"
+    }
+  ],
+  "transports": [
+    "stdio"
+  ]
+}

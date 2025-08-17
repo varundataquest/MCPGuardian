@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Recommend - MCP Registry Harvester</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Recommend</h1>
+    <nav>
+      <a href="/">Search</a>
+      <a href="/clusters/page">Clusters</a>
+      <a href="/discover/page">Discover</a>
+      <a href="/recommend/page">Recommend</a>
+    </nav>
+  </header>
+  <main>
+    <form method="get" action="/recommend/page">
+      <textarea name="desc" rows="4" style="width: 100%;" placeholder="Describe your agent (e.g., 'Agent that sends Gmail, manages Drive, and schedules Calendar')">{{ desc }}</textarea>
+      <input type="number" min="1" name="top" value="{{ top }}" />
+      <button type="submit">Recommend</button>
+    </form>
+
+    {% if results %}
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Score</th>
+          <th>Reasons</th>
+          <th>Repo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td>{{ r['display_name'] }}</td>
+          <td>{{ '%.3f'|format(r['score']) }}</td>
+          <td>{{ ', '.join(r['reasons']) }}</td>
+          <td>{% if r['source_repo'] %}<a href="{{ r['source_repo'] }}" target="_blank">repo</a>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </main>
+</body>
+</html>

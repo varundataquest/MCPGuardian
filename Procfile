@@ -1,0 +1,1 @@
+web: poetry run mcp-harvest devserver --host 0.0.0.0 --port $PORT 

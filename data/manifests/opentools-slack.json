@@ -1,0 +1,34 @@
+{
+  "auth_required": "none",
+  "description": "OpenTools Slack listing",
+  "display_name": "OpenTools Slack",
+  "env_vars": [],
+  "fingerprint_sha256": null,
+  "first_seen_iso": null,
+  "homepage": null,
+  "install": "npx opentools-slack",
+  "last_seen_iso": null,
+  "license": null,
+  "maintainer": null,
+  "notes": null,
+  "registries_seen_in": [
+    "opentools"
+  ],
+  "registry": "opentools",
+  "reputation_score": null,
+  "runtime": "node",
+  "server_id": "opentools-slack",
+  "source_repo": "https://github.com/acme/opentools-slack",
+  "tags": [
+    "slack"
+  ],
+  "tools": [
+    {
+      "description": null,
+      "name": "send_message"
+    }
+  ],
+  "transports": [
+    "stdio"
+  ]
+}
