@@ -23,8 +23,9 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import uvicorn
 
-# Import connector agent
+# Import connector agent and database
 from connector_agent_direct import ConnectorAgent
+from .database import db
 
 # Mock the security scoring function to avoid import issues
 def score_server_from_dict(evidence: Dict[str, Any]) -> tuple[int, Dict[str, int]]:
@@ -54,9 +55,9 @@ def score_server_from_dict(evidence: Dict[str, Any]) -> tuple[int, Dict[str, int
     
     return score, breakdown
 
-# Enhanced MCP server discovery
+# Enhanced MCP server discovery with database caching
 class MCPServerDiscovery:
-    """Enhanced MCP server discovery from multiple sources"""
+    """Enhanced MCP server discovery from multiple sources with database caching"""
     
     def __init__(self):
         self.github_token = os.getenv("GITHUB_TOKEN", "")
@@ -65,7 +66,21 @@ class MCPServerDiscovery:
             self.session.headers.update({"Authorization": f"token {self.github_token}"})
     
     async def discover_servers(self, prompt: str, max_servers: int = 10) -> List[Dict[str, Any]]:
-        """Discover MCP servers from multiple sources"""
+        """Discover MCP servers with database caching"""
+        
+        # First, check if we have a cached result
+        cached_server_names = await db.get_cached_discovery(prompt, max_servers)
+        if cached_server_names:
+            print(f"📋 Using cached discovery for prompt: {prompt}")
+            servers = []
+            for server_name in cached_server_names:
+                server = await db.get_server(server_name)
+                if server:
+                    servers.append(server)
+            return servers[:max_servers]
+        
+        # If no cache, perform fresh discovery
+        print(f"🔍 Performing fresh discovery for prompt: {prompt}")
         servers = []
         
         # Get servers from multiple sources
@@ -98,7 +113,15 @@ class MCPServerDiscovery:
         
         # Sort by security score and return top results
         filtered_servers.sort(key=lambda x: x.get('security_score', 0), reverse=True)
-        return filtered_servers[:max_servers]
+        final_servers = filtered_servers[:max_servers]
+        
+        # Store servers in database and cache the result
+        if final_servers:
+            await db.store_servers_batch(final_servers)
+            server_names = [server['name'] for server in final_servers]
+            await db.cache_discovery_result(prompt, max_servers, server_names)
+        
+        return final_servers
     
     async def _get_github_servers(self, prompt: str, max_count: int) -> List[Dict[str, Any]]:
         """Discover MCP servers from GitHub repositories"""
@@ -691,9 +714,9 @@ async def root(request: Request):
 
 @app.post("/api/discover")
 async def discover_servers(request: PromptRequest):
-    """Discover MCP servers based on prompt"""
+    """Discover MCP servers based on prompt with database caching"""
     try:
-        # Use enhanced server discovery
+        # Use enhanced server discovery with caching
         servers = await server_discovery.discover_servers(request.prompt, request.max_servers)
         
         # Convert to response format
@@ -716,7 +739,8 @@ async def discover_servers(request: PromptRequest):
         return {
             "recommendations": [rec.dict() for rec in recommendations],
             "total_found": len(recommendations),
-            "prompt": request.prompt
+            "prompt": request.prompt,
+            "cached": len(recommendations) > 0  # Simple cache indicator
         }
         
     except Exception as e:
@@ -762,6 +786,58 @@ async def health_check():
         "service": "MCP Guardian",
         "version": "1.0.0"
     }
+
+@app.get("/api/stats")
+async def get_stats():
+    """Get database statistics"""
+    try:
+        stats = await db.get_database_stats()
+        return {
+            "database_stats": stats,
+            "status": "success"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting stats: {str(e)}")
+
+@app.post("/api/seed")
+async def seed_database():
+    """Seed the database with initial server data"""
+    try:
+        # Get all mock servers for seeding
+        all_servers = []
+        
+        # Get servers from different sources
+        sources = [
+            server_discovery._get_community_servers,
+            server_discovery._get_mock_servers
+        ]
+        
+        for source_func in sources:
+            try:
+                servers = await source_func("", 50)  # Empty prompt to get all servers
+                all_servers.extend(servers)
+            except Exception as e:
+                print(f"Error getting servers from {source_func.__name__}: {e}")
+                continue
+        
+        # Add security scoring
+        for server in all_servers:
+            score, breakdown = score_server_from_dict(server.get('security', {}))
+            server['security_score'] = score
+            server['security_breakdown'] = breakdown
+            server['recommendation_level'] = server_discovery._get_recommendation_level(score)
+        
+        # Store in database
+        stored_count = await db.seed_database(all_servers)
+        
+        return {
+            "success": True,
+            "servers_stored": stored_count,
+            "total_servers": len(all_servers)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error seeding database: {str(e)}")
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
