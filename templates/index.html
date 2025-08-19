@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Guardian - AI-Powered MCP Server Discovery</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <div class="flex items-center justify-center mb-4">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 rounded-full mr-4">
+                    <i class="fas fa-shield-alt text-white text-2xl"></i>
+                </div>
+                <h1 class="text-4xl font-bold text-gray-800">MCP Guardian</h1>
+            </div>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                AI-powered security-first MCP server discovery and connection system
+            </p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="max-w-6xl mx-auto">
+            <!-- Prompt Input Section -->
+            <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">
+                    <i class="fas fa-search text-blue-600 mr-2"></i>
+                    Discover MCP Servers
+                </h2>
+                
+                <div class="mb-6">
+                    <label for="prompt" class="block text-sm font-medium text-gray-700 mb-2">
+                        Describe what you want your agent to do:
+                    </label>
+                    <textarea 
+                        id="prompt"
+                        v-model="prompt"
+                        placeholder="e.g., 'Agent that can handle file operations' or 'Agent that can send me emails'"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        rows="3"
+                    ></textarea>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center">
+                            <span class="text-sm text-gray-700 mr-2">Max servers:</span>
+                            <select v-model="maxServers" class="border border-gray-300 rounded px-2 py-1">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                            </select>
+                        </label>
+                    </div>
+                    
+                    <button 
+                        @click="discoverServers"
+                        :disabled="loading || !prompt.trim()"
+                        class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    >
+                        <i class="fas fa-search mr-2"></i>
+                        <span v-if="!loading">Discover Servers</span>
+                        <span v-else>Discovering...</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="loading" class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p class="mt-4 text-gray-600">Analyzing MCP servers and calculating security scores...</p>
+            </div>
+
+            <!-- Results Section -->
+            <div v-if="recommendations.length > 0" class="space-y-6">
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+                        Top Recommendations
+                    </h3>
+                    
+                    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div 
+                            v-for="(server, index) in recommendations" 
+                            :key="server.name"
+                            class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200"
+                        >
+                            <!-- Server Header -->
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-800 text-lg mb-1">
+                                        <span v-if="index === 0" class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium mr-2">🥇</span>
+                                        <span v-else-if="index === 1" class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-medium mr-2">🥈</span>
+                                        <span v-else-if="index === 2" class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-medium mr-2">🥉</span>
+                                        [[ server.name ]]
+                                    </h4>
+                                    <p class="text-sm text-gray-600">[[ server.description ]]</p>
+                                </div>
+                            </div>
+
+                            <!-- Security Score -->
+                            <div class="mb-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-gray-700">Security Score</span>
+                                    <span class="text-lg font-bold" :class="getScoreColor(server.security_score)">
+                                        [[ server.security_score ]]/100
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div 
+                                        class="h-2 rounded-full transition-all duration-500"
+                                        :class="getScoreBarColor(server.security_score)"
+                                        :style="{ width: server.security_score + '%' }"
+                                    ></div>
+                                </div>
+                            </div>
+
+                            <!-- Server Details -->
+                            <div class="space-y-2 mb-4">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Auth Model:</span>
+                                    <span class="font-medium">[[ server.auth_model ]]</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Activity:</span>
+                                    <span class="font-medium">[[ server.activity ]]/10</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Source:</span>
+                                    <span class="font-medium">[[ server.source ]]</span>
+                                </div>
+                            </div>
+
+                            <!-- Capabilities -->
+                            <div class="mb-4">
+                                <h5 class="text-sm font-medium text-gray-700 mb-2">Capabilities:</h5>
+                                <div class="flex flex-wrap gap-1">
+                                    <span 
+                                        v-for="capability in server.capabilities" 
+                                        :key="capability"
+                                        class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                                    >
+                                        [[ capability ]]
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Recommendation Level -->
+                            <div class="mb-4">
+                                <span 
+                                    class="inline-block px-3 py-1 rounded-full text-xs font-medium"
+                                    :class="getRecommendationColor(server.recommendation_level)"
+                                >
+                                    [[ server.recommendation_level ]]
+                                </span>
+                            </div>
+
+                            <!-- Connect Button -->
+                            <button 
+                                @click="connectServer(server)"
+                                class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors duration-200"
+                            >
+                                <i class="fas fa-plug mr-2"></i>
+                                Connect Agent
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connection Modal -->
+            <div v-if="showConnectionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto modal-content">
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xl font-semibold text-gray-800">
+                                <i class="fas fa-code text-green-600 mr-2"></i>
+                                Connect to [[ selectedServer.name ]]
+                            </h3>
+                            <button @click="closeConnectionModal" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Framework:
+                            </label>
+                            <select v-model="selectedFramework" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="langchain">LangChain</option>
+                                <option value="langgraph">LangGraph</option>
+                                <option value="autogen">AutoGen</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+
+                        <div v-if="connectionResult" class="space-y-4">
+                            <div>
+                                <h4 class="font-medium text-gray-800 mb-2">Generated Code:</h4>
+                                <pre class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto"><code>[[ connectionResult.code ]]</code></pre>
+                            </div>
+
+                            <div>
+                                <h4 class="font-medium text-gray-800 mb-2">Setup Instructions:</h4>
+                                <div class="bg-blue-50 p-4 rounded-lg text-sm">
+                                    [[ connectionResult.instructions ]]
+                                </div>
+                            </div>
+
+                            <div v-if="connectionResult.files && connectionResult.files.length > 0">
+                                <h4 class="font-medium text-gray-800 mb-2">Generated Files:</h4>
+                                <ul class="list-disc list-inside space-y-1 text-sm">
+                                    <li v-for="file in connectionResult.files" :key="file.name">
+                                        [[ file.name ]] - [[ file.description ]]
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div v-else class="text-center py-8">
+                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            <p class="mt-2 text-gray-600">Generating connection code...</p>
+                        </div>
+                    </div>
+
+                    <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                        <button 
+                            @click="closeConnectionModal"
+                            class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                        >
+                            Close
+                        </button>
+                        <button 
+                            v-if="connectionResult"
+                            @click="downloadCode"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                            <i class="fas fa-download mr-2"></i>
+                            Download Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-16 text-gray-500">
+            <p>&copy; 2024 MCP Guardian. AI-powered MCP server discovery and security analysis.</p>
+        </footer>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            data() {
+                return {
+                    prompt: '',
+                    maxServers: 10,
+                    loading: false,
+                    recommendations: [],
+                    showConnectionModal: false,
+                    selectedServer: null,
+                    selectedFramework: 'langchain',
+                    connectionResult: null
+                }
+            },
+            methods: {
+                async discoverServers() {
+                    if (!this.prompt.trim()) return;
+                    
+                    this.loading = true;
+                    this.recommendations = [];
+                    
+                    try {
+                        const response = await axios.post('/api/discover', {
+                            prompt: this.prompt,
+                            max_servers: this.maxServers
+                        });
+                        
+                        this.recommendations = response.data.recommendations;
+                    } catch (error) {
+                        console.error('Error discovering servers:', error);
+                        alert('Error discovering servers. Please try again.');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                async connectServer(server) {
+                    this.selectedServer = server;
+                    this.showConnectionModal = true;
+                    this.connectionResult = null;
+                    
+                    try {
+                        const response = await axios.post('/api/connect', {
+                            prompt: this.prompt,
+                            server_name: server.name,
+                            framework: this.selectedFramework
+                        });
+                        
+                        this.connectionResult = response.data.connection_result;
+                    } catch (error) {
+                        console.error('Error connecting to server:', error);
+                        alert('Error connecting to server. Please try again.');
+                    }
+                },
+                
+                closeConnectionModal() {
+                    this.showConnectionModal = false;
+                    this.selectedServer = null;
+                    this.connectionResult = null;
+                },
+                
+                getScoreColor(score) {
+                    if (score >= 70) return 'text-green-600';
+                    if (score >= 50) return 'text-yellow-600';
+                    return 'text-red-600';
+                },
+                
+                getScoreBarColor(score) {
+                    if (score >= 70) return 'bg-green-500';
+                    if (score >= 50) return 'bg-yellow-500';
+                    return 'bg-red-500';
+                },
+                
+                getRecommendationColor(level) {
+                    switch (level) {
+                        case 'EXCELLENT': return 'bg-green-100 text-green-800';
+                        case 'GOOD': return 'bg-yellow-100 text-yellow-800';
+                        case 'POOR': return 'bg-red-100 text-red-800';
+                        default: return 'bg-gray-100 text-gray-800';
+                    }
+                },
+                
+                downloadCode() {
+                    if (!this.connectionResult) return;
+                    
+                    const blob = new Blob([this.connectionResult.code], { type: 'text/plain' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${this.selectedServer.name}_agent.py`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html> 

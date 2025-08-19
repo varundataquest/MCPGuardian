@@ -1,16 +1,18 @@
-# MCP Multi-Agent Selector
+# MCP Guardian 🛡️
 
-An MCP server that orchestrates a multi-agent LangGraph workflow to find and rank MCP servers by security score.
+**AI-powered security-first MCP server discovery and connection system**
+
+An intelligent MCP server that orchestrates a multi-agent LangGraph workflow to discover, analyze, and securely connect you to the best MCP servers for your needs.
 
 ## 🎯 Overview
 
-The MCP Multi-Agent Selector is a sophisticated system that uses LangGraph to orchestrate multiple AI agents to:
+MCP Guardian is a sophisticated system that uses LangGraph to orchestrate multiple AI agents to:
 
-1. **Crawl** MCP registries and web sources for candidate servers
-2. **Analyze** each server's documentation and metadata
-3. **Score** servers based on a comprehensive security rubric
-4. **Rank** and return the best MCP servers for a given task
-5. **Provide** connection instructions for integrating with the selected servers
+1. **Discover** relevant MCP servers from multiple registries and sources
+2. **Analyze** each server's documentation and security posture
+3. **Score** servers based on a comprehensive security rubric (0-100)
+4. **Rank** and return the most secure MCP servers for your task
+5. **Connect** your agent directly to the recommended servers with ready-to-run code
 
 ## 🏗️ Architecture
 
@@ -40,7 +42,7 @@ Manager → Crawler → Writer → Security → Finalizer
 
 ```bash
 git clone <repository-url>
-cd mcp-multiagent-selector
+cd mcp-guardian
 cp env.example .env
 # Edit .env with your configuration
 ```
@@ -48,7 +50,7 @@ cp env.example .env
 ### 2. Start the Services
 
 ```bash
-# Start PostgreSQL and the MCP server
+# Start PostgreSQL and the MCP Guardian server
 docker-compose up --build
 
 # Or use the Makefile

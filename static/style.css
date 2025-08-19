@@ -1,0 +1,82 @@
+/* Custom styles for MCP Guardian Web App */
+
+/* Smooth transitions */
+* {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Loading animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Card hover effects */
+.server-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Code block styling - Make scrollable */
+pre {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    line-height: 1.5;
+    overflow: auto !important;
+    max-height: 400px !important;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Modal content scrollable areas */
+.modal-content pre,
+.modal-content .bg-gray-100 {
+    overflow: auto !important;
+    max-height: 400px !important;
+}
+
+/* Setup instructions scrollable */
+.modal-content .bg-blue-50 {
+    overflow: auto !important;
+    max-height: 300px !important;
+}
+
+/* Custom focus styles */
+.focus-ring:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5);
+}
+
+/* Modal scrollable content */
+.modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Code block container */
+pre code {
+    display: block;
+    overflow-x: auto;
+    white-space: pre;
+} 
