@@ -2,340 +2,260 @@
 
 **AI-powered security-first MCP server discovery and connection system**
 
-An intelligent MCP server that orchestrates a multi-agent LangGraph workflow to discover, analyze, and securely connect you to the best MCP servers for your needs.
+A modern web application that discovers, analyzes, and securely connects you to the best MCP servers for your needs with comprehensive server discovery from multiple sources.
 
 ## 🎯 Overview
 
-MCP Guardian is a sophisticated system that uses LangGraph to orchestrate multiple AI agents to:
+MCP Guardian is a sophisticated web application that:
 
-1. **Discover** relevant MCP servers from multiple registries and sources
-2. **Analyze** each server's documentation and security posture
-3. **Score** servers based on a comprehensive security rubric (0-100)
-4. **Rank** and return the most secure MCP servers for your task
-5. **Connect** your agent directly to the recommended servers with ready-to-run code
+1. **Discovers** relevant MCP servers from GitHub, MCP registry, and community sources
+2. **Analyzes** each server's capabilities and security posture
+3. **Scores** servers based on a comprehensive security rubric (0-100)
+4. **Ranks** and returns the most secure MCP servers for your task
+5. **Connects** your agent directly to the recommended servers with ready-to-run code for multiple frameworks
 
 ## 🏗️ Architecture
 
 ```
-Manager → Crawler → Writer → Security → Finalizer
-   ↓        ↓        ↓        ↓         ↓
-  Init   Discover  Persist   Score   Return Results
+Web Interface (Vue.js + Tailwind CSS)
+           ↓
+    FastAPI Backend
+           ↓
+    Enhanced Discovery Engine
+           ↓
+    Multiple Sources:
+    - GitHub Repositories
+    - MCP Registry
+    - Community Servers
+    - Enhanced Mock Database
 ```
 
-### Agents
+### Features
 
-- **ManagerAgent**: Orchestrates the workflow and tracks execution
-- **CrawlerAgent**: Discovers MCP servers from registries and web sources
-- **WriterAgent**: Analyzes documentation and persists evidence to PostgreSQL
-- **SecurityAgent**: Scores servers using a transparent security rubric
-- **FinalizerAgent**: Ranks results and returns the best servers
+- **Multi-Source Discovery**: GitHub, MCP registry, community servers
+- **Smart Filtering**: Relevance-based server selection
+- **Security Scoring**: Transparent security evaluation
+- **Framework Support**: LangChain, AutoGen, LangGraph, Custom
+- **Modern Web UI**: Interactive Vue.js interface with real-time updates
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.11+
-- Docker and Docker Compose
-- PostgreSQL (provided via Docker)
+- Python 3.10+
+- Modern web browser
 
 ### 1. Clone and Setup
 
 ```bash
-git clone <repository-url>
-cd mcp-guardian
-cp env.example .env
-# Edit .env with your configuration
+git clone https://github.com/varundataquest/MCPGuardian.git
+cd MCPGuardian
 ```
 
-### 2. Start the Services
+### 2. Install Dependencies
 
 ```bash
-# Start PostgreSQL and the MCP Guardian server
-docker-compose up --build
+# Install Python dependencies
+pip install -e .
 
-# Or use the Makefile
-make dev
+# Or using pip directly
+pip install fastapi uvicorn jinja2 requests
 ```
 
-### 3. Run Database Migrations
+### 3. Run the Web Application
 
 ```bash
-# The migrations run automatically on startup, but you can also run manually:
-make migrate
+# Start the web application
+python run_web_app.py
 ```
 
-### 4. Test the System
+### 4. Access the Application
 
+- **Web Interface**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/api/health
+
+## 🌐 Web Application Features
+
+### **Server Discovery**
+- Enter your prompt (e.g., "Agent that can handle file operations")
+- Get relevant MCP servers from multiple sources
+- View security scores and recommendations
+- See server capabilities and authentication methods
+
+### **Code Generation**
+- Choose your preferred framework (LangChain, AutoGen, LangGraph, Custom)
+- Get ready-to-run agent code
+- Download complete setup instructions
+- Receive environment configuration templates
+
+### **Enhanced Discovery Sources**
+- **GitHub Repositories**: Real MCP servers from GitHub
+- **MCP Registry**: Official MCP registry and documentation
+- **Community Servers**: Curated community-contributed servers
+- **Enhanced Database**: 20+ servers across multiple categories
+
+## 📊 Server Categories
+
+### **File Operations**
+- Google Drive, AWS S3, Dropbox, OneDrive
+- File upload, download, sharing, collaboration
+
+### **Email & Communication**
+- Gmail, Outlook, SendGrid, Slack
+- Email management, messaging, team collaboration
+
+### **Database**
+- PostgreSQL, MySQL, MongoDB
+- Database operations, query execution, data management
+
+### **Search & Analytics**
+- Elasticsearch, Algolia
+- Search operations, analytics, indexing
+
+### **AI/ML**
+- OpenAI, Anthropic Claude
+- Text generation, AI chat, analysis
+
+### **Productivity**
+- Notion, GitHub, Jira, Calendar, Sheets
+- Document management, project management, scheduling
+
+## 🔧 API Endpoints
+
+### **Discover Servers**
 ```bash
-# Run tests
-make test
-
-# Seed with test data
-python scripts/seed.py
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file based on `env.example`:
-
-```bash
-# Database
-DATABASE_URL=postgresql+psycopg://postgres:postgres@db:5432/mcp
-
-# LLM Provider (choose one)
-LLM_PROVIDER=openai
-OPENAI_API_KEY=your_openai_api_key_here
-
-# Or use Anthropic
-# LLM_PROVIDER=anthropic
-# ANTHROPIC_API_KEY=your_anthropic_api_key_here
-
-# Crawling Configuration
-CRAWL_TIMEOUT_SECS=20
-REGISTRIES_URLS=https://registry.1.example/index.json,https://registry.2.example/index.json
-MAX_CANDIDATES=50
-
-# MCP Server Configuration
-MCP_SERVER_HOST=0.0.0.0
-MCP_SERVER_PORT=8080
-```
-
-## 🛠️ Usage
-
-### MCP Tools
-
-The server exposes four main tools:
-
-#### 1. `run_selection_pipeline`
-
-Run the complete pipeline to find and rank MCP servers.
-
-```json
+POST /api/discover
 {
-  "user_task": "I want to create an agent that can negotiate the best price for a gym membership",
-  "max_candidates": 50
+  "prompt": "Agent that can handle file operations",
+  "max_servers": 10
 }
 ```
 
-#### 2. `get_last_results`
-
-Retrieve the last N results from the database.
-
-```json
+### **Connect to Server**
+```bash
+POST /api/connect
 {
-  "limit": 10
+  "prompt": "Agent that can handle file operations",
+  "server_name": "google-drive-mcp-server",
+  "framework": "langchain"
 }
 ```
 
-#### 3. `connect_agent_instructions`
-
-Get connection instructions for the top-k ranked servers.
-
-```json
-{
-  "top_k": 3
-}
-```
-
-#### 4. `health`
-
-Health check endpoint.
-
-```json
-{}
-```
-
-### Example Usage
-
-```python
-# Using the MCP client
-from mcp import ClientSession, StdioServerParameters
-
-async with ClientSession(StdioServerParameters(
-    command="python", 
-    args=["-m", "mcp_multiagent_selector.mcp_server.server"]
-)) as session:
-    # Run the pipeline
-    result = await session.call_tool(
-        "run_selection_pipeline",
-        {
-            "user_task": "Find servers for web scraping and data extraction",
-            "max_candidates": 20
-        }
-    )
-    print(result.content[0].text)
-```
-
-## 🔒 Security Scoring Rubric
-
-The system uses a transparent scoring rubric (0-100 points):
-
-- **Signature/Attestation** (+25): Code signing, attestation present
-- **HTTPS/mTLS** (+15): Secure transport documented
-- **Hash Pinning** (+15): Artifact digest references
-- **Update Cadence** (+10): Recent commits/releases
-- **Least Privilege** (+10): Tool scope clarity in docs
-- **SBOM/AI-BOM** (+10): Dependency transparency
-- **Rate Limiting** (+5): Abuse controls disclosed
-- **Observability** (+5): Traceability docs
-- **CVE Penalties** (-30): Known vulnerabilities
-
-## 🧪 Testing
-
+### **Health Check**
 ```bash
-# Run all tests
-make test
-
-# Run specific test categories
-pytest tests/test_scoring.py -v
-pytest tests/test_extract.py -v
-pytest tests/test_end_to_end.py -v
-
-# Run with coverage
-pytest --cov=src tests/
+GET /api/health
 ```
 
-## 📊 Database Schema
+## 🛠️ Framework Support
 
-### Tables
+### **LangChain**
+Traditional agent framework with tool-based interactions
 
-- **servers**: MCP server information
-- **evidence**: Analysis and metadata for each server
-- **scores**: Security scores with detailed breakdowns
-- **runs**: Pipeline execution history
+### **AutoGen**
+Multi-agent conversation framework for complex workflows
 
-### Example Queries
+### **LangGraph**
+Stateful workflow framework with graph-based execution
 
-```sql
--- Get top ranked servers
-SELECT s.name, s.endpoint, sc.score, e.summary
-FROM servers s
-JOIN scores sc ON s.id = sc.server_id
-JOIN evidence e ON s.id = e.server_id
-ORDER BY sc.score DESC
-LIMIT 10;
+### **Custom**
+Simple direct server connections for basic use cases
 
--- Get latest run results
-SELECT r.user_task, r.result
-FROM runs r
-WHERE r.status = 'completed'
-ORDER BY r.finished_at DESC
-LIMIT 1;
+## 📁 Project Structure
+
+```
+MCP Guardian/
+├── 🌐 Web Application Core
+│   ├── src/mcp_multiagent_selector/web_app.py     # Main FastAPI app
+│   ├── run_web_app.py                             # Launcher script
+│   ├── templates/index.html                       # Vue.js frontend
+│   └── static/style.css                           # Enhanced CSS
+├── Connector Agents
+│   ├── connector_agent_direct.py                  # Enhanced connector
+│   └── downloadable_connector_agent.py            # Standalone generator
+├── 📚 Documentation
+│   ├── README.md                                  # Main documentation
+│   ├── WEB_APP_README.md                          # Web app guide
+│   ├── DOWNLOADABLE_CONNECTOR_AGENT_README.md     # Connector guide
+│   └── ARCHITECTURE.md                            # System architecture
+├── ⚙️ Configuration
+│   ├── pyproject.toml                             # Project config
+│   ├── poetry.lock                                # Dependencies
+│   ├── env.example                                # Environment template
+│   └── .gitignore                                 # File exclusions
+└── 🔧 Development
+    └── .pre-commit-config.yaml                    # Code quality
 ```
 
-## 🚀 Deployment
+## 🔒 Security Features
 
-### Docker Compose (Recommended)
+### **Security Scoring Rubric**
+- **Hash Pinning**: Certificate pinning for secure connections
+- **SBOM/AIBOM**: Software bill of materials
+- **Rate Limiting**: Protection against abuse
+- **Observability**: Comprehensive logging and monitoring
+- **Authentication**: OAuth2, API key, username/password support
 
+### **Transparent Scoring**
+- Clear breakdown of security scores
+- Recommendation levels (EXCELLENT, GOOD, FAIR, POOR)
+- Activity-based scoring from GitHub metrics
+
+## 🚀 Usage Examples
+
+### **1. Discover File Operation Servers**
 ```bash
-docker-compose up --build -d
+curl -X POST http://localhost:8000/api/discover \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Agent that can handle file operations", "max_servers": 5}'
 ```
 
-### Kubernetes
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mcp-selector
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mcp-selector
-  template:
-    metadata:
-      labels:
-        app: mcp-selector
-    spec:
-      containers:
-      - name: mcp-selector
-        image: mcp-multiagent-selector:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: DATABASE_URL
-          value: "postgresql+psycopg://user:pass@postgres:5432/mcp"
-```
-
-### Railway
-
+### **2. Generate LangChain Agent**
 ```bash
-# Deploy to Railway
-railway up
+curl -X POST http://localhost:8000/api/connect \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Agent that can handle file operations", "server_name": "google-drive-mcp-server", "framework": "langchain"}'
 ```
 
-## 🔧 Development
-
-### Setup Development Environment
-
+### **3. Use Standalone Connector Agent**
 ```bash
-# Install dependencies
-make install
-
-# Format code
-make format
-
-# Lint code
-make lint
-
-# Type check
-make type-check
-
-# Run all checks
-make check
+python downloadable_connector_agent.py
 ```
-
-### Adding New Registry Sources
-
-1. Extend `RegistryCrawler` in `src/mcp_multiagent_selector/crawl/registries.py`
-2. Add your registry URL to `REGISTRIES_URLS` in `.env`
-3. Test with `make test`
-
-### Adding New Security Metrics
-
-1. Update the scoring rubric in `src/mcp_multiagent_selector/security/scoring.py`
-2. Add extraction logic in `src/mcp_multiagent_selector/crawl/extract.py`
-3. Update tests in `tests/test_scoring.py`
 
 ## 📈 Performance
 
-- **Pipeline Execution**: ~30-60 seconds for 50 candidates
-- **Database Queries**: <100ms for typical operations
-- **Memory Usage**: ~200MB for typical workloads
-- **Concurrent Requests**: Supports multiple concurrent pipeline executions
+### **Discovery Capabilities**
+- **Multiple Sources**: 4 discovery sources
+- **Server Categories**: 6 major categories
+- **Total Servers**: 20+ servers available
+- **Framework Support**: 4 frameworks supported
+
+### **Response Times**
+- **Discovery**: < 2 seconds
+- **Code Generation**: < 1 second
+- **Web Interface**: Real-time updates
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests
-5. Run `make check`
-6. Submit a pull request
+4. Add tests if applicable
+5. Submit a pull request
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
+## 🙏 Acknowledgments
 
-- **Issues**: GitHub Issues
-- **Documentation**: This README and inline code comments
-- **Examples**: See `scripts/seed.py` for usage examples
+- Model Context Protocol (MCP) community
+- FastAPI and Vue.js communities
+- All contributors and users
 
-## 🔮 Roadmap
+---
 
-- [ ] Support for more LLM providers (Azure OpenAI, local models)
-- [ ] Advanced clustering and similarity analysis
-- [ ] Real-time monitoring and alerting
-- [ ] Integration with more MCP registries
-- [ ] Web UI for pipeline monitoring
-- [ ] Advanced caching and performance optimizations
-- [ ] Support for custom scoring rubrics
-- [ ] Integration with CI/CD pipelines for automated security scanning
+**MCP Guardian** - Making MCP server discovery and connection secure, simple, and intelligent! 🚀
 
 
 
