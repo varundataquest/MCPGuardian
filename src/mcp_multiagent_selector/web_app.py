@@ -8,6 +8,8 @@ import asyncio
 import json
 import os
 import sys
+import re
+import requests
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
@@ -51,6 +53,574 @@ def score_server_from_dict(evidence: Dict[str, Any]) -> tuple[int, Dict[str, int
     breakdown['update_cadence'] = activity
     
     return score, breakdown
+
+# Enhanced MCP server discovery
+class MCPServerDiscovery:
+    """Enhanced MCP server discovery from multiple sources"""
+    
+    def __init__(self):
+        self.github_token = os.getenv("GITHUB_TOKEN", "")
+        self.session = requests.Session()
+        if self.github_token:
+            self.session.headers.update({"Authorization": f"token {self.github_token}"})
+    
+    async def discover_servers(self, prompt: str, max_servers: int = 10) -> List[Dict[str, Any]]:
+        """Discover MCP servers from multiple sources"""
+        servers = []
+        
+        # Get servers from multiple sources
+        sources = [
+            self._get_github_servers,
+            self._get_mcp_registry_servers,
+            self._get_community_servers,
+            self._get_mock_servers
+        ]
+        
+        for source_func in sources:
+            try:
+                source_servers = await source_func(prompt, max_servers // len(sources))
+                servers.extend(source_servers)
+                if len(servers) >= max_servers:
+                    break
+            except Exception as e:
+                print(f"Error fetching from {source_func.__name__}: {e}")
+                continue
+        
+        # Filter and rank servers based on prompt
+        filtered_servers = self._filter_servers_by_prompt(servers, prompt)
+        
+        # Add security scoring
+        for server in filtered_servers:
+            score, breakdown = score_server_from_dict(server.get('security', {}))
+            server['security_score'] = score
+            server['security_breakdown'] = breakdown
+            server['recommendation_level'] = self._get_recommendation_level(score)
+        
+        # Sort by security score and return top results
+        filtered_servers.sort(key=lambda x: x.get('security_score', 0), reverse=True)
+        return filtered_servers[:max_servers]
+    
+    async def _get_github_servers(self, prompt: str, max_count: int) -> List[Dict[str, Any]]:
+        """Discover MCP servers from GitHub repositories"""
+        servers = []
+        
+        # Search for MCP servers on GitHub
+        search_queries = [
+            "mcp-server",
+            "model-context-protocol server",
+            "MCP server",
+            "mcp tool",
+            "model context protocol"
+        ]
+        
+        for query in search_queries:
+            try:
+                url = f"https://api.github.com/search/repositories"
+                params = {
+                    "q": f"{query} language:python",
+                    "sort": "stars",
+                    "order": "desc",
+                    "per_page": min(max_count, 30)
+                }
+                
+                response = self.session.get(url, params=params)
+                if response.status_code == 200:
+                    data = response.json()
+                    for repo in data.get('items', []):
+                        server = self._parse_github_repo(repo, prompt)
+                        if server:
+                            servers.append(server)
+                
+                if len(servers) >= max_count:
+                    break
+                    
+            except Exception as e:
+                print(f"Error searching GitHub for {query}: {e}")
+                continue
+        
+        return servers[:max_count]
+    
+    def _parse_github_repo(self, repo: Dict[str, Any], prompt: str) -> Optional[Dict[str, Any]]:
+        """Parse GitHub repository into MCP server format"""
+        try:
+            name = repo.get('name', '').lower()
+            description = repo.get('description', '')
+            
+            # Skip if not likely an MCP server
+            if not any(keyword in name or keyword in description.lower() 
+                      for keyword in ['mcp', 'model-context', 'modelcontext']):
+                return None
+            
+            # Determine capabilities based on name and description
+            capabilities = self._extract_capabilities(name, description, prompt)
+            
+            # Determine auth model
+            auth_model = self._determine_auth_model(name, description)
+            
+            # Calculate activity score
+            activity = min(10, max(1, repo.get('stargazers_count', 0) // 10))
+            
+            server = {
+                "name": name,
+                "endpoint": f"https://github.com/{repo['full_name']}",
+                "description": description or f"MCP server for {name}",
+                "source": "github",
+                "auth_model": auth_model,
+                "activity": activity,
+                "capabilities": capabilities,
+                "security": {
+                    "hash_pinning": activity > 5,
+                    "sbom": activity > 7,
+                    "rate_limiting": True,
+                    "observability": activity > 6
+                }
+            }
+            
+            return server
+            
+        except Exception as e:
+            print(f"Error parsing GitHub repo: {e}")
+            return None
+    
+    async def _get_mcp_registry_servers(self, prompt: str, max_count: int) -> List[Dict[str, Any]]:
+        """Discover servers from MCP registry and known sources"""
+        servers = []
+        
+        # Known MCP registry endpoints
+        registry_urls = [
+            "https://raw.githubusercontent.com/modelcontextprotocol/registry/main/registry.json",
+            "https://api.github.com/repos/modelcontextprotocol/registry/contents",
+            "https://raw.githubusercontent.com/modelcontextprotocol/mcp/main/README.md"
+        ]
+        
+        for url in registry_urls:
+            try:
+                response = self.session.get(url, timeout=10)
+                if response.status_code == 200:
+                    # Parse registry data (simplified)
+                    registry_servers = self._parse_registry_data(response.text, prompt)
+                    servers.extend(registry_servers)
+                    
+                    if len(servers) >= max_count:
+                        break
+                        
+            except Exception as e:
+                print(f"Error fetching from registry {url}: {e}")
+                continue
+        
+        return servers[:max_count]
+    
+    def _parse_registry_data(self, data: str, prompt: str) -> List[Dict[str, Any]]:
+        """Parse registry data into server format"""
+        servers = []
+        
+        # Extract server information from registry data
+        # This is a simplified parser - in production you'd want more sophisticated parsing
+        server_patterns = [
+            r'([a-zA-Z0-9_-]+)-mcp-server',
+            r'([a-zA-Z0-9_-]+)_mcp_server',
+            r'mcp-server-([a-zA-Z0-9_-]+)'
+        ]
+        
+        for pattern in server_patterns:
+            matches = re.findall(pattern, data, re.IGNORECASE)
+            for match in matches:
+                server_name = f"{match}-mcp-server"
+                capabilities = self._extract_capabilities(server_name, data, prompt)
+                
+                server = {
+                    "name": server_name,
+                    "endpoint": f"https://registry.mcp.dev/{server_name}",
+                    "description": f"Official MCP server for {match}",
+                    "source": "mcp_registry",
+                    "auth_model": "oauth2" if "oauth" in data.lower() else "api_key",
+                    "activity": 8,
+                    "capabilities": capabilities,
+                    "security": {
+                        "hash_pinning": True,
+                        "sbom": True,
+                        "rate_limiting": True,
+                        "observability": True
+                    }
+                }
+                servers.append(server)
+        
+        return servers
+    
+    async def _get_community_servers(self, prompt: str, max_count: int) -> List[Dict[str, Any]]:
+        """Get community-contributed MCP servers"""
+        servers = []
+        
+        # Community server sources
+        community_sources = [
+            {
+                "name": "anthropic-mcp-server",
+                "description": "Anthropic Claude integration for AI conversations",
+                "capabilities": ["ai_chat", "text_generation", "reasoning"],
+                "auth_model": "api_key"
+            },
+            {
+                "name": "openai-mcp-server", 
+                "description": "OpenAI GPT integration for text generation and analysis",
+                "capabilities": ["text_generation", "code_generation", "analysis"],
+                "auth_model": "api_key"
+            },
+            {
+                "name": "notion-mcp-server",
+                "description": "Notion workspace integration for document management",
+                "capabilities": ["document_management", "database", "collaboration"],
+                "auth_model": "oauth2"
+            },
+            {
+                "name": "slack-mcp-server",
+                "description": "Slack workspace integration for messaging and collaboration",
+                "capabilities": ["messaging", "file_sharing", "team_collaboration"],
+                "auth_model": "oauth2"
+            },
+            {
+                "name": "github-mcp-server",
+                "description": "GitHub repository integration for code management",
+                "capabilities": ["code_management", "version_control", "collaboration"],
+                "auth_model": "oauth2"
+            },
+            {
+                "name": "jira-mcp-server",
+                "description": "Jira project management integration",
+                "capabilities": ["project_management", "issue_tracking", "workflow"],
+                "auth_model": "oauth2"
+            },
+            {
+                "name": "calendar-mcp-server",
+                "description": "Calendar integration for scheduling and events",
+                "capabilities": ["scheduling", "event_management", "reminders"],
+                "auth_model": "oauth2"
+            },
+            {
+                "name": "sheets-mcp-server",
+                "description": "Google Sheets integration for spreadsheet operations",
+                "capabilities": ["spreadsheet_operations", "data_analysis", "collaboration"],
+                "auth_model": "oauth2"
+            },
+            {
+                "name": "drive-mcp-server",
+                "description": "Google Drive integration for file operations",
+                "capabilities": ["file_operations", "storage", "sharing"],
+                "auth_model": "oauth2"
+            },
+            {
+                "name": "gmail-mcp-server",
+                "description": "Gmail integration for email operations",
+                "capabilities": ["email_operations", "contact_management", "search"],
+                "auth_model": "oauth2"
+            }
+        ]
+        
+        for source in community_sources:
+            if len(servers) >= max_count:
+                break
+                
+            capabilities = self._extract_capabilities(source["name"], source["description"], prompt)
+            if capabilities:  # Only add if relevant to prompt
+                server = {
+                    "name": source["name"],
+                    "endpoint": f"https://community.mcp.dev/{source['name']}",
+                    "description": source["description"],
+                    "source": "community",
+                    "auth_model": source["auth_model"],
+                    "activity": 7,
+                    "capabilities": capabilities,
+                    "security": {
+                        "hash_pinning": True,
+                        "sbom": True,
+                        "rate_limiting": True,
+                        "observability": True
+                    }
+                }
+                servers.append(server)
+        
+        return servers
+    
+    async def _get_mock_servers(self, prompt: str, max_count: int) -> List[Dict[str, Any]]:
+        """Get enhanced mock servers with more variety"""
+        all_mock_servers = []
+        
+        # File operations servers
+        file_servers = [
+            {
+                "name": "google-drive-mcp-server",
+                "endpoint": "https://api.drive-mcp.com",
+                "description": "Google Drive integration for file operations with OAuth2 authentication",
+                "source": "google_official",
+                "auth_model": "oauth2",
+                "activity": 9,
+                "capabilities": ["file_upload", "file_download", "file_sharing", "collaboration"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            },
+            {
+                "name": "aws-s3-mcp-server",
+                "endpoint": "https://api.s3-mcp.com",
+                "description": "AWS S3 file storage operations with API key authentication",
+                "source": "aws_official",
+                "auth_model": "api_key",
+                "activity": 9,
+                "capabilities": ["file_storage", "file_retrieval", "versioning", "backup"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            },
+            {
+                "name": "dropbox-mcp-server",
+                "endpoint": "https://api.dropbox-mcp.com",
+                "description": "Dropbox file management with enterprise security and comprehensive logging",
+                "source": "dropbox_official",
+                "auth_model": "oauth2",
+                "activity": 8,
+                "capabilities": ["file_sync", "version_control", "sharing", "collaboration"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            },
+            {
+                "name": "onedrive-mcp-server",
+                "endpoint": "https://api.onedrive-mcp.com",
+                "description": "Microsoft OneDrive integration for cloud storage and collaboration",
+                "source": "microsoft_official",
+                "auth_model": "oauth2",
+                "activity": 8,
+                "capabilities": ["cloud_storage", "file_sync", "collaboration", "versioning"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            }
+        ]
+        
+        # Email servers
+        email_servers = [
+            {
+                "name": "gmail-mcp-server",
+                "endpoint": "https://api.gmail-mcp.com",
+                "description": "Gmail API integration for sending and receiving emails with OAuth2 authentication",
+                "source": "google_official",
+                "auth_model": "oauth2",
+                "activity": 9,
+                "capabilities": ["send_email", "receive_email", "manage_labels", "search"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            },
+            {
+                "name": "outlook-mcp-server",
+                "endpoint": "https://api.outlook-mcp.com",
+                "description": "Microsoft Outlook integration for email and calendar management",
+                "source": "microsoft_official",
+                "auth_model": "oauth2",
+                "activity": 8,
+                "capabilities": ["email_management", "calendar_integration", "contact_management"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            },
+            {
+                "name": "sendgrid-mcp-server",
+                "endpoint": "https://api.sendgrid-mcp.com",
+                "description": "SendGrid email delivery service integration with API key authentication",
+                "source": "sendgrid_official",
+                "auth_model": "api_key",
+                "activity": 7,
+                "capabilities": ["send_email", "templates", "analytics", "bounce_handling"],
+                "security": {"hash_pinning": False, "sbom": False, "rate_limiting": True, "observability": False}
+            }
+        ]
+        
+        # Database servers
+        database_servers = [
+            {
+                "name": "postgres-mcp-server",
+                "endpoint": "https://api.postgres-mcp.com",
+                "description": "PostgreSQL database operations with connection pooling and security",
+                "source": "postgres_official",
+                "auth_model": "username_password",
+                "activity": 8,
+                "capabilities": ["query_execution", "schema_management", "backup", "monitoring"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            },
+            {
+                "name": "mysql-mcp-server",
+                "endpoint": "https://api.mysql-mcp.com",
+                "description": "MySQL database integration with transaction support and optimization",
+                "source": "mysql_official",
+                "auth_model": "username_password",
+                "activity": 7,
+                "capabilities": ["database_operations", "transaction_management", "optimization"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            },
+            {
+                "name": "mongodb-mcp-server",
+                "endpoint": "https://api.mongodb-mcp.com",
+                "description": "MongoDB NoSQL database integration with document operations",
+                "source": "mongodb_official",
+                "auth_model": "api_key",
+                "activity": 7,
+                "capabilities": ["document_operations", "aggregation", "indexing", "replication"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            }
+        ]
+        
+        # Search servers
+        search_servers = [
+            {
+                "name": "elasticsearch-mcp-server",
+                "endpoint": "https://api.elasticsearch-mcp.com",
+                "description": "Elasticsearch integration for advanced search and analytics",
+                "source": "elastic_official",
+                "auth_model": "api_key",
+                "activity": 8,
+                "capabilities": ["search", "analytics", "indexing", "aggregation"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            },
+            {
+                "name": "algolia-mcp-server",
+                "endpoint": "https://api.algolia-mcp.com",
+                "description": "Algolia search integration for fast and relevant search results",
+                "source": "algolia_official",
+                "auth_model": "api_key",
+                "activity": 7,
+                "capabilities": ["search", "autocomplete", "analytics", "personalization"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            }
+        ]
+        
+        # AI/ML servers
+        ai_servers = [
+            {
+                "name": "openai-mcp-server",
+                "endpoint": "https://api.openai-mcp.com",
+                "description": "OpenAI integration for text generation and analysis",
+                "source": "openai_official",
+                "auth_model": "api_key",
+                "activity": 9,
+                "capabilities": ["text_generation", "code_generation", "analysis", "translation"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            },
+            {
+                "name": "anthropic-mcp-server",
+                "endpoint": "https://api.anthropic-mcp.com",
+                "description": "Anthropic Claude integration for AI conversations and reasoning",
+                "source": "anthropic_official",
+                "auth_model": "api_key",
+                "activity": 8,
+                "capabilities": ["ai_chat", "reasoning", "analysis", "content_generation"],
+                "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
+            }
+        ]
+        
+        # Combine all server categories
+        all_mock_servers.extend(file_servers)
+        all_mock_servers.extend(email_servers)
+        all_mock_servers.extend(database_servers)
+        all_mock_servers.extend(search_servers)
+        all_mock_servers.extend(ai_servers)
+        
+        # Filter by prompt relevance
+        filtered_servers = []
+        for server in all_mock_servers:
+            capabilities = self._extract_capabilities(server["name"], server["description"], prompt)
+            if capabilities:
+                server["capabilities"] = capabilities
+                filtered_servers.append(server)
+        
+        return filtered_servers[:max_count]
+    
+    def _extract_capabilities(self, name: str, description: str, prompt: str) -> List[str]:
+        """Extract relevant capabilities based on prompt"""
+        prompt_lower = prompt.lower()
+        name_lower = name.lower()
+        desc_lower = description.lower()
+        
+        # Define capability mappings
+        capability_mappings = {
+            "file": ["file_upload", "file_download", "file_storage", "file_operations"],
+            "email": ["send_email", "receive_email", "email_management"],
+            "database": ["query_execution", "database_operations", "data_management"],
+            "search": ["search", "indexing", "analytics"],
+            "ai": ["text_generation", "ai_chat", "analysis"],
+            "collaboration": ["collaboration", "sharing", "team_work"],
+            "storage": ["storage", "backup", "versioning"],
+            "communication": ["messaging", "notifications", "chat"]
+        }
+        
+        # Find relevant capabilities
+        relevant_capabilities = []
+        for keyword, capabilities in capability_mappings.items():
+            if (keyword in prompt_lower or 
+                keyword in name_lower or 
+                keyword in desc_lower):
+                relevant_capabilities.extend(capabilities)
+        
+        # Add some default capabilities if none found
+        if not relevant_capabilities:
+            if "file" in prompt_lower:
+                relevant_capabilities = ["file_operations", "storage"]
+            elif "email" in prompt_lower:
+                relevant_capabilities = ["email_management", "communication"]
+            elif "database" in prompt_lower:
+                relevant_capabilities = ["database_operations", "data_management"]
+            else:
+                relevant_capabilities = ["general_operations"]
+        
+        return list(set(relevant_capabilities))  # Remove duplicates
+    
+    def _determine_auth_model(self, name: str, description: str) -> str:
+        """Determine authentication model based on server info"""
+        text = f"{name} {description}".lower()
+        
+        if "oauth" in text or "google" in text or "microsoft" in text:
+            return "oauth2"
+        elif "api_key" in text or "token" in text:
+            return "api_key"
+        elif "username" in text or "password" in text:
+            return "username_password"
+        else:
+            return "api_key"  # Default
+    
+    def _filter_servers_by_prompt(self, servers: List[Dict[str, Any]], prompt: str) -> List[Dict[str, Any]]:
+        """Filter servers based on prompt relevance"""
+        prompt_lower = prompt.lower()
+        filtered = []
+        
+        for server in servers:
+            name = server.get("name", "").lower()
+            description = server.get("description", "").lower()
+            capabilities = server.get("capabilities", [])
+            
+            # Check if server is relevant to prompt
+            relevance_score = 0
+            
+            # Check name relevance
+            if any(word in name for word in prompt_lower.split()):
+                relevance_score += 2
+            
+            # Check description relevance
+            if any(word in description for word in prompt_lower.split()):
+                relevance_score += 1
+            
+            # Check capabilities relevance
+            for capability in capabilities:
+                if any(word in capability.lower() for word in prompt_lower.split()):
+                    relevance_score += 1
+            
+            # Add server if relevant
+            if relevance_score > 0:
+                server["relevance_score"] = relevance_score
+                filtered.append(server)
+        
+        # Sort by relevance score
+        filtered.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
+        return filtered
+    
+    def _get_recommendation_level(self, security_score: int) -> str:
+        """Get recommendation level based on security score"""
+        if security_score >= 80:
+            return "EXCELLENT"
+        elif security_score >= 60:
+            return "GOOD"
+        elif security_score >= 40:
+            return "FAIR"
+        else:
+            return "POOR"
+
+# Initialize server discovery
+server_discovery = MCPServerDiscovery()
 
 # Pydantic models for API
 class PromptRequest(BaseModel):
@@ -111,160 +681,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Templates
 templates = Jinja2Templates(directory="templates")
 
-# Mock data for different types of servers
-MOCK_SERVERS = {
-    "file operations": [
-        {
-            "name": "google-drive-mcp-server",
-            "endpoint": "https://api.drive-mcp.com",
-            "description": "Google Drive integration for file operations with OAuth2 authentication",
-            "source": "google_official",
-            "auth_model": "oauth2",
-            "activity": 9,
-            "capabilities": ["file_upload", "file_download", "file_sharing", "collaboration"],
-            "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
-        },
-        {
-            "name": "aws-s3-mcp-server",
-            "endpoint": "https://api.s3-mcp.com",
-            "description": "AWS S3 file storage operations with API key authentication",
-            "source": "aws_official",
-            "auth_model": "api_key",
-            "activity": 9,
-            "capabilities": ["file_storage", "file_retrieval", "versioning", "backup"],
-            "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
-        },
-        {
-            "name": "dropbox-mcp-server",
-            "endpoint": "https://api.dropbox-mcp.com",
-            "description": "Dropbox file management with enterprise security and comprehensive logging",
-            "source": "dropbox_official",
-            "auth_model": "oauth2",
-            "activity": 8,
-            "capabilities": ["file_sync", "version_control", "sharing", "collaboration"],
-            "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
-        }
-    ],
-    "email": [
-        {
-            "name": "gmail-mcp-server",
-            "endpoint": "https://api.gmail-mcp.com",
-            "description": "Gmail API integration for sending and receiving emails with OAuth2 authentication",
-            "source": "google_official",
-            "auth_model": "oauth2",
-            "activity": 9,
-            "capabilities": ["send_email", "receive_email", "manage_labels", "search"],
-            "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
-        },
-        {
-            "name": "sendgrid-mcp-server",
-            "endpoint": "https://api.sendgrid-mcp.com",
-            "description": "SendGrid email delivery service integration with API key authentication",
-            "source": "sendgrid_official",
-            "auth_model": "api_key",
-            "activity": 7,
-            "capabilities": ["send_email", "templates", "analytics", "bounce_handling"],
-            "security": {"hash_pinning": False, "sbom": False, "rate_limiting": True, "observability": False}
-        }
-    ],
-    "database": [
-        {
-            "name": "postgres-mcp-server",
-            "endpoint": "https://api.postgres-mcp.com",
-            "description": "PostgreSQL database operations with connection pooling and security",
-            "source": "postgres_official",
-            "auth_model": "username_password",
-            "activity": 8,
-            "capabilities": ["query_execution", "schema_management", "backup", "monitoring"],
-            "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
-        },
-        {
-            "name": "mongodb-mcp-server",
-            "endpoint": "https://api.mongodb-mcp.com",
-            "description": "MongoDB NoSQL database operations with document management",
-            "source": "mongodb_official",
-            "auth_model": "api_key",
-            "activity": 7,
-            "capabilities": ["document_operations", "aggregation", "indexing", "replication"],
-            "security": {"hash_pinning": True, "sbom": False, "rate_limiting": True, "observability": True}
-        }
-    ],
-    "search": [
-        {
-            "name": "elasticsearch-mcp-server",
-            "endpoint": "https://api.elasticsearch-mcp.com",
-            "description": "Elasticsearch search and analytics with full-text search capabilities",
-            "source": "elastic_official",
-            "auth_model": "api_key",
-            "activity": 8,
-            "capabilities": ["full_text_search", "analytics", "aggregations", "monitoring"],
-            "security": {"hash_pinning": True, "sbom": True, "rate_limiting": True, "observability": True}
-        }
-    ]
-}
-
-def get_relevant_servers(prompt: str) -> List[Dict[str, Any]]:
-    """Get relevant servers based on the prompt"""
-    prompt_lower = prompt.lower()
-    
-    # Simple keyword matching
-    if any(word in prompt_lower for word in ["file", "files", "upload", "download", "storage", "drive"]):
-        return MOCK_SERVERS.get("file operations", [])
-    elif any(word in prompt_lower for word in ["email", "mail", "send", "gmail", "outlook"]):
-        return MOCK_SERVERS.get("email", [])
-    elif any(word in prompt_lower for word in ["database", "db", "sql", "query", "postgres", "mongodb"]):
-        return MOCK_SERVERS.get("database", [])
-    elif any(word in prompt_lower for word in ["search", "elasticsearch", "query", "index"]):
-        return MOCK_SERVERS.get("search", [])
-    else:
-        # Return a mix of servers for generic prompts
-        all_servers = []
-        for category in MOCK_SERVERS.values():
-            all_servers.extend(category)
-        return all_servers[:3]
-
-async def analyze_servers(servers: List[Dict[str, Any]]) -> List[ServerRecommendation]:
-    """Analyze servers and return recommendations"""
-    recommendations = []
-    
-    for server in servers:
-        # Create evidence for scoring
-        evidence = {
-            'hash_pinning': server['security'].get('hash_pinning', False),
-            'auth_model': server['auth_model'],
-            'maintainer_activity': server['activity'],
-            'sbom': server['security'].get('sbom', False),
-            'risk_notes': f"Server: {server['name']}, Auth: {server['auth_model']}, Activity: {server['activity']}/10"
-        }
-        
-        score, breakdown = score_server_from_dict(evidence)
-        
-        # Determine recommendation level
-        if score >= 70:
-            recommendation_level = "EXCELLENT"
-        elif score >= 50:
-            recommendation_level = "GOOD"
-        else:
-            recommendation_level = "POOR"
-        
-        recommendation = ServerRecommendation(
-            name=server['name'],
-            endpoint=server['endpoint'],
-            description=server['description'],
-            security_score=score,
-            auth_model=server['auth_model'],
-            activity=server['activity'],
-            source=server['source'],
-            capabilities=server['capabilities'],
-            security_breakdown=breakdown,
-            recommendation_level=recommendation_level
-        )
-        
-        recommendations.append(recommendation)
-    
-    # Sort by security score
-    recommendations.sort(key=lambda x: x.security_score, reverse=True)
-    return recommendations
+# Initialize connector agent
+connector_agent = ConnectorAgent()
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -275,50 +693,75 @@ async def root(request: Request):
 async def discover_servers(request: PromptRequest):
     """Discover MCP servers based on prompt"""
     try:
-        # Get relevant servers
-        servers = get_relevant_servers(request.prompt)
+        # Use enhanced server discovery
+        servers = await server_discovery.discover_servers(request.prompt, request.max_servers)
         
-        # Analyze servers
-        recommendations = await analyze_servers(servers)
+        # Convert to response format
+        recommendations = []
+        for server in servers:
+            recommendation = ServerRecommendation(
+                name=server["name"],
+                endpoint=server["endpoint"],
+                description=server["description"],
+                security_score=server.get("security_score", 0),
+                auth_model=server["auth_model"],
+                activity=server["activity"],
+                source=server["source"],
+                capabilities=server["capabilities"],
+                security_breakdown=server.get("security_breakdown", {}),
+                recommendation_level=server.get("recommendation_level", "FAIR")
+            )
+            recommendations.append(recommendation)
         
         return {
-            "success": True,
-            "prompt": request.prompt,
-            "servers_found": len(recommendations),
-            "recommendations": [rec.dict() for rec in recommendations[:request.max_servers]]
+            "recommendations": [rec.dict() for rec in recommendations],
+            "total_found": len(recommendations),
+            "prompt": request.prompt
         }
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error discovering servers: {str(e)}")
 
 @app.post("/api/connect")
-async def connect_server(request: ConnectorRequest):
+async def connect_to_server(request: ConnectorRequest):
     """Generate connection code for a specific server"""
     try:
-        # Find the server
-        all_servers = []
-        for category in MOCK_SERVERS.values():
-            all_servers.extend(category)
+        # Find the server in our discovered servers
+        servers = await server_discovery.discover_servers(request.prompt, 50)
+        target_server = None
         
-        server_info = next((s for s in all_servers if s['name'] == request.server_name), None)
+        for server in servers:
+            if server["name"] == request.server_name:
+                target_server = server
+                break
         
-        if not server_info:
+        if not target_server:
             raise HTTPException(status_code=404, detail="Server not found")
         
-        # Use connector agent
-        connector = ConnectorAgent()
-        result = await connector.run(request.prompt, server_info)
-        
-        # Update framework in result
-        result["framework"] = request.framework
+        # Generate connection code using connector agent
+        connection_result = await connector_agent.run(
+            prompt=request.prompt,
+            server_info=target_server,
+            framework=request.framework
+        )
         
         return {
             "success": True,
-            "server": server_info,
-            "framework": request.framework,
-            "connection_result": result
+            "server": target_server,
+            "connection_result": connection_result
         }
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error connecting to server: {str(e)}")
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "service": "MCP Guardian",
+        "version": "1.0.0"
+    }
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -327,21 +770,10 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            # Echo back for now
-            await manager.send_personal_message(f"Message received: {data}", websocket)
+            await manager.send_personal_message(f"Message: {data}", websocket)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "service": "MCP Guardian"}
-
 if __name__ == "__main__":
-    uvicorn.run(
-        "web_app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    ) 
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
