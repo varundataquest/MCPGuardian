@@ -1,259 +1,372 @@
-# MCP Guardian Connector Agent - Downloadable Version
+# MCP Guardian Connector Agent 📦
 
-## 🚀 Overview
+**Standalone code generation tool for connecting to MCP servers**
 
-This is a **standalone, downloadable version** of the MCP Guardian connector agent that generates production-ready code for connecting to MCP (Model Context Protocol) servers.
+## 🎯 Overview
 
-## 📁 What You Get
+The MCP Guardian Connector Agent is a powerful standalone tool that generates ready-to-use code for connecting your applications to MCP servers. It supports multiple frameworks and provides comprehensive setup instructions.
 
-When you run the downloadable connector agent, it generates these files:
+## 🚀 Quick Start
 
-### 1. **Agent Code** (`google_drive_mcp_server_agent.py`)
-- Complete, runnable LangChain agent code
-- Ready-to-use Python script
-- Includes all necessary imports and dependencies
-- Interactive command-line interface
-
-### 2. **Setup Instructions** (`google_drive_mcp_server_setup_instructions.md`)
-- Step-by-step installation guide
-- Environment variable configuration
-- Security best practices
-- Usage instructions
-
-### 3. **Requirements** (`google_drive_mcp_server_requirements.txt`)
-- Python package dependencies
-- Version specifications for compatibility
-- Ready for `pip install -r requirements.txt`
-
-### 4. **Environment Template** (`google_drive_mcp_server_env_template.txt`)
-- Template for environment variables
-- API key configuration
-- Authentication setup
-- Copy to `.env` and fill in your credentials
-
-## 🛠️ How to Use
-
-### Step 1: Generate the Files
+### **1. Run the Connector Agent**
 ```bash
 python downloadable_connector_agent.py
 ```
 
-### Step 2: Install Dependencies
+### **2. Generated Files**
+The tool will create:
+- `google_drive_mcp_server_agent.py` - Ready-to-run agent code
+- `google_drive_mcp_server_setup_instructions.md` - Complete setup guide
+- `google_drive_mcp_server_requirements.txt` - Dependencies
+- `google_drive_mcp_server_env_template.txt` - Environment variables
+
+### **3. Use the Generated Code**
 ```bash
+# Install dependencies
 pip install -r google_drive_mcp_server_requirements.txt
-```
 
-### Step 3: Set Up Environment Variables
-```bash
-# Copy the template
+# Set up environment variables
 cp google_drive_mcp_server_env_template.txt .env
+# Edit .env with your credentials
 
-# Edit .env with your actual credentials
-nano .env
-```
-
-### Step 4: Run the Agent
-```bash
+# Run the agent
 python google_drive_mcp_server_agent.py
 ```
 
-## 🔧 Features
+## ✨ Features
 
-### ✅ **Complete Code Generation**
-- LangChain agent implementation
-- MCP server integration
-- Tool creation and management
-- Error handling and logging
+### **🔧 Multi-Framework Support**
+- **LangChain**: Traditional agent framework with tools
+- **AutoGen**: Multi-agent conversation framework
+- **LangGraph**: Stateful workflow framework
+- **Custom**: Simple direct server connections
 
-### ✅ **Multiple Authentication Models**
-- OAuth2 support
-- API key authentication
-- Username/password authentication
-- Secure credential management
+### **📦 Complete Code Generation**
+- **Agent Code**: Full implementation with error handling
+- **Setup Instructions**: Step-by-step configuration guide
+- **Dependencies**: All required packages and versions
+- **Environment Template**: Secure credential management
 
-### ✅ **Smart Capability Detection**
-- Automatically detects server capabilities
-- Generates appropriate tool descriptions
-- Customizes agent behavior based on task
+### **🛡️ Security-First Design**
+- **Environment Variables**: No hardcoded secrets
+- **Error Handling**: Comprehensive error management
+- **Input Validation**: Secure parameter handling
+- **Logging**: Detailed operation logging
 
-### ✅ **Production Ready**
-- Proper error handling
-- Connection management
-- Resource cleanup
-- Security best practices
+### **🎯 Smart Code Generation**
+- **Framework-Specific**: Optimized for each framework
+- **Server-Aware**: Tailored to specific MCP server capabilities
+- **Task-Oriented**: Generated based on user requirements
+- **Production-Ready**: Includes best practices and patterns
 
-## 📋 Example Generated Code
+## 📋 Generated Files
 
-The generated agent includes:
-
+### **Agent Code File**
 ```python
-class GoogleDriveMcpServerAgent:
-    """Agent for google-drive-mcp-server operations"""
-    
-    def __init__(self):
-        self.llm = ChatOpenAI(
-            model="gpt-4",
-            temperature=0,
-            api_key=os.getenv("OPENAI_API_KEY")
-        )
-        self.session = None
-        self.agent_executor = None
-    
-    async def connect_to_server(self):
-        """Connect to the MCP server"""
-        # Connection logic here
-    
-    async def run(self, user_input: str) -> str:
-        """Run the agent with user input"""
-        # Agent execution logic here
+#!/usr/bin/env python3
+"""
+MCP Agent for google-drive-mcp-server
+Generated by MCP Guardian
+Task: Agent that can handle file operations
+"""
+
+import os
+import asyncio
+from typing import List, Dict, Any
+from langchain.agents import AgentExecutor, create_openai_functions_agent
+from langchain.tools import BaseTool
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from modelcontextprotocol import ClientSession, StdioServerParameters
+from modelcontextprotocol.models import TextContent
+
+# ... complete implementation
 ```
 
-## 🔐 Security Features
+### **Setup Instructions**
+```markdown
+# Google Drive MCP Server Agent Setup
 
-### **Environment Variables**
-- All credentials stored in `.env` file
-- No hardcoded secrets in code
-- Secure credential management
+## Prerequisites
+- Python 3.10+
+- OpenAI API key
+- Google Drive API credentials
 
-### **Authentication Support**
-- OAuth2 for enterprise applications
-- API key authentication
-- Username/password for legacy systems
+## Installation
+1. Install dependencies: `pip install -r requirements.txt`
+2. Set up environment variables
+3. Configure Google Drive API
+4. Test the connection
 
-### **Best Practices**
-- Input validation
-- Error handling
-- Secure connection management
-- Resource cleanup
+## Usage
+- Run: `python google_drive_mcp_server_agent.py`
+- Interactive: Use natural language commands
+- File operations: Upload, download, share files
+```
 
-## 🎯 Use Cases
+### **Requirements File**
+```txt
+langchain>=0.2.0
+langchain-openai>=0.1.0
+modelcontextprotocol>=0.1.0
+openai>=1.0.0
+python-dotenv>=1.0.0
+```
 
-### **File Operations**
-- Upload/download files
-- File sharing and collaboration
-- Document management
-- Cloud storage integration
+### **Environment Template**
+```bash
+# OpenAI Configuration
+OPENAI_API_KEY=your_openai_api_key_here
 
-### **Email Management**
-- Send/receive emails
-- Email automation
-- Contact management
-- Calendar integration
+# Google Drive Configuration
+GOOGLE_DRIVE_CLIENT_ID=your_client_id
+GOOGLE_DRIVE_CLIENT_SECRET=your_client_secret
+GOOGLE_DRIVE_REFRESH_TOKEN=your_refresh_token
+```
 
-### **Database Operations**
-- Query databases
-- Data manipulation
-- Schema management
-- Backup and restore
+## 🔧 Framework-Specific Features
 
-### **Search Operations**
-- Web search
-- Document search
-- Index management
-- Content discovery
+### **LangChain Framework**
+- **Tool Integration**: Seamless MCP server tool integration
+- **Agent Executor**: Full agent execution environment
+- **Memory Management**: Conversation history and context
+- **Error Recovery**: Graceful error handling and recovery
 
-## 🚀 Quick Start
+### **AutoGen Framework**
+- **Multi-Agent**: Multiple agent conversations
+- **Code Execution**: Safe code execution environment
+- **Conversation Flow**: Natural conversation management
+- **Task Delegation**: Intelligent task distribution
 
-1. **Download the connector agent:**
-   ```bash
-   # The file is already in your project
-   python downloadable_connector_agent.py
-   ```
+### **LangGraph Framework**
+- **State Management**: Persistent conversation state
+- **Workflow Control**: Complex workflow orchestration
+- **Node Integration**: Modular node-based architecture
+- **Graph Execution**: Efficient graph-based processing
 
-2. **Install dependencies:**
-   ```bash
-   pip install -r google_drive_mcp_server_requirements.txt
-   ```
+### **Custom Framework**
+- **Direct Connection**: Simple server connections
+- **Minimal Dependencies**: Lightweight implementation
+- **Custom Logic**: Flexible custom implementations
+- **Easy Integration**: Simple integration with existing code
 
-3. **Configure environment:**
-   ```bash
-   cp google_drive_mcp_server_env_template.txt .env
-   # Edit .env with your credentials
-   ```
+## 🛠️ Usage Examples
 
-4. **Run the agent:**
-   ```bash
-   python google_drive_mcp_server_agent.py
-   ```
+### **File Operations Agent**
+```bash
+# Generate file operations agent
+python downloadable_connector_agent.py
 
-5. **Interact with the agent:**
-   ```
-   🤖 You: Upload a file to Google Drive
-   📤 Agent: I'll help you upload a file to Google Drive...
-   ```
+# Use the generated agent
+python google_drive_mcp_server_agent.py
 
-## 🔗 Integration with Web App
+# Example interactions:
+# "Upload a file to my Google Drive"
+# "Download the latest report"
+# "Share the project folder with my team"
+```
 
-This downloadable version works alongside the **MCP Guardian Web Application**:
+### **Email Management Agent**
+```bash
+# Generate email management agent
+python downloadable_connector_agent.py
 
-- **Web App**: Discover and analyze MCP servers
-- **Connector Agent**: Generate runnable code for selected servers
-- **Downloadable Files**: Standalone, production-ready agents
+# Use the generated agent
+python gmail_mcp_server_agent.py
 
-### **Web App Features:**
-- Server discovery and recommendation
-- Security analysis and scoring
-- Interactive code generation
-- Real-time connector agent
+# Example interactions:
+# "Send an email to john@example.com"
+# "Check my inbox for urgent messages"
+# "Create a new email draft"
+```
 
-### **Downloadable Features:**
-- Standalone agent code
-- Complete setup instructions
-- Configuration templates
-- Production deployment ready
+### **Database Operations Agent**
+```bash
+# Generate database operations agent
+python downloadable_connector_agent.py
 
-## 📚 Documentation
+# Use the generated agent
+python postgres_mcp_server_agent.py
 
-### **Generated Files:**
-- `google_drive_mcp_server_agent.py` - Main agent code
-- `google_drive_mcp_server_setup_instructions.md` - Setup guide
-- `google_drive_mcp_server_requirements.txt` - Dependencies
-- `google_drive_mcp_server_env_template.txt` - Environment template
+# Example interactions:
+# "Query the users table"
+# "Create a new database backup"
+# "Show the latest orders"
+```
 
-### **Key Components:**
-- **ConnectorAgent Class**: Main code generation logic
-- **LangChain Integration**: Agent framework integration
-- **MCP Protocol**: Server communication
-- **Authentication**: Secure credential management
+## 🔒 Security Features
 
-## 🎉 Benefits
+### **Credential Management**
+- **Environment Variables**: Secure credential storage
+- **No Hardcoding**: No secrets in generated code
+- **Template Files**: Safe credential templates
+- **Access Control**: Proper permission management
 
-### **For Developers:**
-- ✅ **Zero Configuration**: Generated code works out of the box
-- ✅ **Production Ready**: Includes error handling and security
-- ✅ **Framework Agnostic**: Supports multiple agent frameworks
-- ✅ **Customizable**: Easy to modify and extend
+### **Error Handling**
+- **Graceful Failures**: Proper error recovery
+- **User Feedback**: Clear error messages
+- **Logging**: Comprehensive error logging
+- **Validation**: Input and parameter validation
 
-### **For Organizations:**
-- ✅ **Security First**: Built-in security best practices
-- ✅ **Scalable**: Designed for production deployment
-- ✅ **Maintainable**: Clean, well-documented code
-- ✅ **Compliant**: Follows industry standards
+### **Data Protection**
+- **Secure Connections**: Encrypted communication
+- **Input Sanitization**: Safe input handling
+- **Output Filtering**: Secure output processing
+- **Audit Trail**: Operation logging and tracking
 
-## 🔄 Updates and Maintenance
+## 📊 Performance Features
 
-The connector agent is designed to be:
-- **Self-contained**: No external dependencies for code generation
-- **Version controlled**: Track changes to generated code
-- **Updatable**: Easy to regenerate with new features
-- **Backward compatible**: Maintains compatibility with existing deployments
+### **Optimized Code**
+- **Async Operations**: Non-blocking operations
+- **Connection Pooling**: Efficient resource management
+- **Caching**: Smart result caching
+- **Memory Management**: Efficient memory usage
 
-## 📞 Support
+### **Scalability**
+- **Modular Design**: Easy to extend and modify
+- **Configuration**: Flexible configuration options
+- **Plugin Architecture**: Extensible functionality
+- **Resource Management**: Efficient resource utilization
 
-For issues or questions:
-1. Check the generated setup instructions
-2. Review the code comments
-3. Test with simple queries first
-4. Enable verbose logging for debugging
+## 🔧 Customization
 
-## 🎯 Next Steps
+### **Modifying Generated Code**
+```python
+# Add custom functionality
+class CustomGoogleDriveTool(BaseTool):
+    def __init__(self, session: ClientSession):
+        super().__init__()
+        self.session = session
+    
+    async def _arun(self, query: str) -> str:
+        # Add your custom logic here
+        return "Custom response"
+```
 
-1. **Run the connector agent** to generate your files
-2. **Install dependencies** and configure environment
-3. **Test the agent** with simple queries
-4. **Customize** the code for your specific needs
-5. **Deploy** to production environment
+### **Extending Capabilities**
+```python
+# Add new tools
+tools = [
+    GoogleDriveTool(session),
+    CustomGoogleDriveTool(session),  # Your custom tool
+    # Add more tools as needed
+]
+```
+
+### **Configuration Options**
+```python
+# Customize agent behavior
+agent = GoogleDriveAgent(
+    model="gpt-4-turbo",  # Custom model
+    temperature=0.1,      # Custom temperature
+    max_tokens=2000       # Custom token limit
+)
+```
+
+## 🚀 Deployment
+
+### **Local Development**
+```bash
+# Development setup
+python downloadable_connector_agent.py
+python generated_agent.py
+```
+
+### **Production Deployment**
+```bash
+# Production setup
+pip install -r requirements.txt
+cp env_template.txt .env
+# Configure .env with production credentials
+python generated_agent.py
+```
+
+### **Docker Deployment**
+```dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY generated_agent.py .
+COPY .env .
+
+CMD ["python", "generated_agent.py"]
+```
+
+## 🔧 Troubleshooting
+
+### **Common Issues**
+
+**Import Errors:**
+```bash
+# Install missing dependencies
+pip install -r requirements.txt
+pip install --upgrade pip
+```
+
+**Authentication Errors:**
+```bash
+# Check environment variables
+echo $OPENAI_API_KEY
+echo $GOOGLE_DRIVE_CLIENT_ID
+```
+
+**Connection Errors:**
+```bash
+# Test MCP server connection
+python -c "from modelcontextprotocol import ClientSession; print('MCP available')"
+```
+
+### **Debug Mode**
+```bash
+# Enable debug logging
+export DEBUG=true
+python generated_agent.py
+```
+
+### **Verbose Output**
+```bash
+# Enable verbose logging
+export VERBOSE=true
+python generated_agent.py
+```
+
+## 📈 Monitoring
+
+### **Performance Metrics**
+- **Response Times**: Track agent response times
+- **Success Rates**: Monitor operation success rates
+- **Error Rates**: Track error frequencies
+- **Resource Usage**: Monitor memory and CPU usage
+
+### **Logging**
+- **Application Logs**: Agent operation logs
+- **Error Logs**: Error tracking and reporting
+- **Performance Logs**: Response time monitoring
+- **Audit Logs**: Operation audit trails
+
+## 🤝 Contributing
+
+### **Adding New Frameworks**
+1. Create framework-specific code generator
+2. Add framework to the main connector agent
+3. Update documentation and examples
+4. Test with various MCP servers
+
+### **Improving Code Generation**
+1. Enhance code templates
+2. Add more customization options
+3. Improve error handling
+4. Optimize performance
+
+### **Extending Capabilities**
+1. Add new server types
+2. Implement additional tools
+3. Enhance security features
+4. Improve user experience
 
 ---
 
-**Generated by MCP Guardian - AI-powered security-first MCP server discovery** 🛡️✨ 
+**MCP Guardian Connector Agent** - Making MCP server integration simple, secure, and powerful! 🚀✨ 
