@@ -1,0 +1,59 @@
+weights:
+  baseline: 70
+  runtime_capabilities: 12
+  repo_hygiene: 6
+  release_cadence: 4
+  ci_presence: 2
+  trust_signals: 4
+  distribution_host: 2
+  reputation: 4
+
+runtime_capabilities:
+  max_points: 35
+  penalties:
+    shell_unscoped: 12
+    filesystem_unscoped: 8
+    network_unscoped: 6
+  rewards:
+    has_scopes: 6
+    has_auth: 5
+    has_rate_limits: 3
+    has_timeouts: 3
+  # Baseline credit when explicit mitigations are found; absence yields near-zero
+
+repo_hygiene:
+  license_points: 8
+  security_md_points: 7
+  codeowners_points: 5
+
+release_cadence:
+  points_recent_release_days: 7
+  points_release_count: 3
+  recent_days_threshold: 90
+  count_window_days: 365
+  count_min_releases: 3
+
+ci_presence:
+  points: 5
+
+trust_signals:
+  https_points: 6
+  hsts_points: 4
+  security_txt_points: 5
+
+distribution_host:
+  mcp_json_points: 9
+  security_headers_points: 6
+
+reputation:
+  max_points: 4
+
+caps:
+  shell_no_allowlist: 50
+  no_license: 60
+  no_security_policy: 80
+
+baseline:
+  description: "Minimum baseline credit for listed servers"
+  conditions:
+    homepage_required: true

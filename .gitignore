@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+.venv/
+*.pyc
+
+# Node
+node_modules/
+
+# Next
+.next/
+
+# Env
+.env
+.env.*
+ui/.env.local
+
+# OS
+.DS_Store
+
+# Build
+out/
+dist/
+coverage/
+
+

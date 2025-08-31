@@ -1,0 +1,10 @@
+.next/
+node_modules/
+.env.local
+.env*
+.vercel/
+out/
+dist/
+*.log
+.DS_Store
+

@@ -1,0 +1,96 @@
+# Render Blueprint - Deploy MCPGuardian
+# This file defines all services needed for a complete deployment
+
+services:
+  # Backend API Service (FastAPI)
+  - type: web
+    name: mcpguardian-api
+    runtime: python
+    plan: starter
+    region: oregon
+    buildCommand: |
+      cd backend
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend
+      uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: BACKEND_PORT
+        value: $PORT
+      - key: MCP_SERVER_PORT
+        value: 8016
+      - key: UI_PORT
+        value: 3000
+      - key: PYTHONPATH
+        value: backend
+      # Database configuration
+      - key: SUPABASE_URL
+        sync: false  # Set manually in Render dashboard
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false  # Set manually - keep secure
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      # Optional AI services
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      # Admin access
+      - key: ADMIN_ACCESS_TOKEN
+        sync: false
+      # Render-specific API base (will be set to actual service URL in production)
+      - key: API_BASE_URL
+        sync: false  # Set manually to https://mcpguardian-api.onrender.com
+      - key: NEXT_PUBLIC_API_BASE
+        sync: false  # Set manually to https://mcpguardian-api.onrender.com
+
+  # MCP Server Service (FastMCP)  
+  - type: web
+    name: mcpguardian-mcp
+    runtime: python
+    plan: starter
+    region: oregon
+    buildCommand: |
+      cd backend
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend
+      python mcp_server.py --transport streamable-http --host 0.0.0.0 --port $PORT --path /mcp
+    envVars:
+      - key: MCP_SERVER_PORT
+        value: $PORT
+      - key: PYTHONPATH
+        value: backend
+      # Share database config with API service
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+
+  # Frontend Service (Next.js)
+  - type: web
+    name: mcpguardian-ui
+    runtime: node
+    plan: starter
+    region: oregon
+    rootDir: ui
+    buildCommand: |
+      npm ci
+      npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_BASE
+        sync: false  # Set manually to https://mcpguardian-api.onrender.com
+      - key: NEXT_PUBLIC_ADMIN_ACCESS_TOKEN
+        sync: false
+
+# Database (if using Render PostgreSQL instead of Supabase)
+databases:
+  # Uncomment if you want to use Render's managed PostgreSQL
+  # - name: mcpguardian-db
+  #   databaseName: mcpguardian
+  #   user: mcpguardian

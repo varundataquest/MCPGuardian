@@ -1,0 +1,132 @@
+# Single-service Dockerfile for Render (All-in-one deployment)
+# Runs Backend API, MCP Server, and Frontend in one container
+
+FROM node:18-slim as frontend-build
+
+WORKDIR /app/ui
+COPY ui/package*.json ./
+RUN npm ci
+# Inject public env at build-time for client code (can be overridden)
+ARG NEXT_PUBLIC_API_BASE=/api
+ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE
+COPY ui/ ./
+RUN npm run build
+
+FROM python:3.11-slim as final
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    nodejs \
+    npm \
+    nginx \
+    supervisor \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH=/app/backend
+
+WORKDIR /app
+
+# Copy and install Python dependencies
+COPY backend/requirements.txt ./backend/
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
+# Copy backend code
+COPY backend/ ./backend/
+
+# Copy frontend build artifacts and runtime deps
+COPY --from=frontend-build /app/ui/.next /app/ui/.next
+COPY --from=frontend-build /app/ui/node_modules /app/ui/node_modules
+COPY --from=frontend-build /app/ui/package*.json /app/ui/
+COPY --from=frontend-build /app/ui/public /app/ui/public
+COPY --from=frontend-build /app/ui/next.config.mjs /app/ui/
+
+# Create nginx configuration
+RUN mkdir -p /etc/nginx/sites-available
+COPY <<EOF /etc/nginx/sites-available/default
+server {
+    listen 80;
+    server_name _;
+    
+    # Frontend (Next.js server)
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    
+    # Backend API
+    location /api/ {
+        proxy_pass http://localhost:8015/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+    
+    # MCP Server
+    location /mcp {
+        proxy_pass http://localhost:8016/mcp;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+EOF
+
+# Create supervisor configuration  
+COPY <<EOF /etc/supervisor/conf.d/mcpguardian.conf
+[program:backend]
+command=uvicorn app.main:app --host 0.0.0.0 --port 8015
+directory=/app/backend
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+
+[program:mcp-server]
+command=python3 mcp_server.py --transport streamable-http --host 0.0.0.0 --port 8016 --path /mcp
+directory=/app/backend
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+
+[program:ui]
+command=npm run start
+directory=/app/ui
+environment=PORT=3000
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+
+[program:nginx]
+command=nginx -g "daemon off;"
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+EOF
+
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost/api/admin/crawl/status || exit 1
+
+# Start supervisor
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
